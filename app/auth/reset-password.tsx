@@ -32,79 +32,47 @@ const LuxuryColors = {
   goldenBrown: '#A67C00',
 };
 
-export default function SignupScreen() {
+export default function ResetPasswordScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [acceptTerms, setAcceptTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isButtonPressed, setIsButtonPressed] = useState(false);
   const [errors, setErrors] = useState<{ 
-    fullName?: string; 
-    email?: string; 
-    password?: string; 
+    newPassword?: string; 
     confirmPassword?: string;
-    terms?: string;
   }>({});
-
-  const validateEmail = (email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
 
   const validatePassword = (password: string) => {
     const minLength = password.length >= 6;
     const hasUpperCase = /[A-Z]/.test(password);
     const hasLowerCase = /[a-z]/.test(password);
     const hasNumbers = /\d/.test(password);
-    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
     
     return {
       isValid: minLength && hasUpperCase && hasLowerCase && hasNumbers,
       minLength,
       hasUpperCase,
       hasLowerCase,
-      hasNumbers,
-      hasSpecialChar
+      hasNumbers
     };
   };
 
   const validateForm = () => {
     const newErrors: { 
-      fullName?: string; 
-      email?: string; 
-      password?: string; 
+      newPassword?: string; 
       confirmPassword?: string;
-      terms?: string;
     } = {};
 
-    // Full Name Validation
-    if (!fullName.trim()) {
-      newErrors.fullName = 'Full name is required';
-    } else if (fullName.trim().length < 2) {
-      newErrors.fullName = 'Full name must be at least 2 characters';
-    } else if (!/^[a-zA-Z\s]+$/.test(fullName.trim())) {
-      newErrors.fullName = 'Full name can only contain letters and spaces';
-    }
-
-    // Email Validation
-    if (!email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!validateEmail(email.trim())) {
-      newErrors.email = 'Please enter a valid email address (e.g., user@gmail.com)';
-    }
-
-    // Password Validation
-    if (!password.trim()) {
-      newErrors.password = 'Password is required';
+    // New Password Validation
+    if (!newPassword.trim()) {
+      newErrors.newPassword = 'New password is required';
     } else {
-      const passwordValidation = validatePassword(password);
+      const passwordValidation = validatePassword(newPassword);
       if (!passwordValidation.isValid) {
         let requirements = [];
         if (!passwordValidation.minLength) requirements.push('at least 6 characters');
@@ -112,27 +80,22 @@ export default function SignupScreen() {
         if (!passwordValidation.hasLowerCase) requirements.push('one lowercase letter');
         if (!passwordValidation.hasNumbers) requirements.push('one number');
         
-        newErrors.password = `Password must contain: ${requirements.join(', ')}`;
+        newErrors.newPassword = `Password must contain: ${requirements.join(', ')}`;
       }
     }
 
     // Confirm Password Validation
     if (!confirmPassword.trim()) {
-      newErrors.confirmPassword = 'Please confirm your password';
-    } else if (password !== confirmPassword) {
+      newErrors.confirmPassword = 'Please confirm your new password';
+    } else if (newPassword !== confirmPassword) {
       newErrors.confirmPassword = 'Passwords do not match';
-    }
-
-    // Terms Validation
-    if (!acceptTerms) {
-      newErrors.terms = 'You must accept the terms and conditions';
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSignup = async () => {
+  const handleResetPassword = async () => {
     if (!validateForm()) return;
 
     setIsLoading(true);
@@ -141,19 +104,23 @@ export default function SignupScreen() {
     setTimeout(() => {
       setIsLoading(false);
       Alert.alert(
-        'Account Created', 
-        'Your account has been created successfully! Please check your email for verification.',
-        [{ text: 'OK' }]
+        'Password Reset Successfully', 
+        'Your password has been reset successfully. You can now login with your new password.',
+        [
+          {
+            text: 'OK',
+            onPress: () => router.push('/auth/login')
+          }
+        ]
       );
     }, 2000);
   };
 
-  const handleLogin = () => {
+  const handleBackToLogin = () => {
     router.push('/auth/login');
   };
 
-  const isFormValid = fullName.trim() && email.trim() && password.trim() && 
-                     confirmPassword.trim() && acceptTerms && !isLoading;
+  const isFormValid = newPassword.trim() && confirmPassword.trim() && !isLoading;
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: LuxuryColors.jetBlack }]}>
@@ -166,6 +133,14 @@ export default function SignupScreen() {
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
           >
+            {/* Back Button */}
+            <TouchableOpacity 
+              onPress={handleBackToLogin}
+              style={styles.backButton}
+            >
+              <Text style={styles.backButtonText}>← Back to Login</Text>
+            </TouchableOpacity>
+
             {/* Luxury Header */}
             <View style={styles.headerContainer}>
               <View style={styles.logoContainer}>
@@ -174,98 +149,45 @@ export default function SignupScreen() {
                 </View>
               </View>
               <Text style={styles.welcomeText}>
-                Create Account
+                Reset Password
               </Text>
               <Text style={styles.subtitleText}>
-                Join Privora to start managing your wealth
+                Create a new password for your account
               </Text>
             </View>
 
             {/* Luxury Form Card */}
             <View style={styles.formCard}>
-              {/* Full Name Input */}
+              {/* New Password Input */}
               <View style={styles.inputContainer}>
                 <Text style={styles.inputLabel}>
-                  Full Name
+                  New Password
                 </Text>
                 <View style={[
                   styles.inputWrapper,
-                  { borderColor: errors.fullName ? LuxuryColors.royalRed : LuxuryColors.imperialGold }
+                  { borderColor: errors.newPassword ? LuxuryColors.royalRed : LuxuryColors.imperialGold }
                 ]}>
                   <TextInput
                     style={styles.textInput}
-                    placeholder="Enter your full name"
+                    placeholder="Enter your new password"
                     placeholderTextColor={LuxuryColors.coolGray}
-                    value={fullName}
-                    onChangeText={setFullName}
-                    autoCapitalize="words"
-                    autoCorrect={false}
-                  />
-                </View>
-                {errors.fullName && (
-                  <Text style={styles.errorText}>
-                    {errors.fullName}
-                  </Text>
-                )}
-              </View>
-
-              {/* Email Input */}
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>
-                  Email Address
-                </Text>
-                <View style={[
-                  styles.inputWrapper,
-                  { borderColor: errors.email ? LuxuryColors.royalRed : LuxuryColors.imperialGold }
-                ]}>
-                  <TextInput
-                    style={styles.textInput}
-                    placeholder="Enter your email"
-                    placeholderTextColor={LuxuryColors.coolGray}
-                    value={email}
-                    onChangeText={setEmail}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                  />
-                </View>
-                {errors.email && (
-                  <Text style={styles.errorText}>
-                    {errors.email}
-                  </Text>
-                )}
-              </View>
-
-              {/* Password Input */}
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>
-                  Password
-                </Text>
-                <View style={[
-                  styles.inputWrapper,
-                  { borderColor: errors.password ? LuxuryColors.royalRed : LuxuryColors.imperialGold }
-                ]}>
-                  <TextInput
-                    style={styles.textInput}
-                    placeholder="Create a password"
-                    placeholderTextColor={LuxuryColors.coolGray}
-                    value={password}
-                    onChangeText={setPassword}
-                    secureTextEntry={!showPassword}
+                    value={newPassword}
+                    onChangeText={setNewPassword}
+                    secureTextEntry={!showNewPassword}
                     autoCapitalize="none"
                   />
                   <TouchableOpacity
-                    onPress={() => setShowPassword(!showPassword)}
+                    onPress={() => setShowNewPassword(!showNewPassword)}
                     style={styles.showButton}
                   >
                     <Text style={styles.showButtonText}>
-                      {showPassword ? 'Hide' : 'Show'}
+                      {showNewPassword ? 'Hide' : 'Show'}
                     </Text>
                   </TouchableOpacity>
                 </View>
-                {errors.password && (
+                {errors.newPassword && (
                   <Text style={styles.errorText}>
-                    {errors.password}
+                    {errors.newPassword}
                   </Text>
                 )}
               </View>
@@ -273,7 +195,7 @@ export default function SignupScreen() {
               {/* Confirm Password Input */}
               <View style={styles.inputContainer}>
                 <Text style={styles.inputLabel}>
-                  Confirm Password
+                  Confirm New Password
                 </Text>
                 <View style={[
                   styles.inputWrapper,
@@ -281,7 +203,7 @@ export default function SignupScreen() {
                 ]}>
                   <TextInput
                     style={styles.textInput}
-                    placeholder="Confirm your password"
+                    placeholder="Confirm your new password"
                     placeholderTextColor={LuxuryColors.coolGray}
                     value={confirmPassword}
                     onChangeText={setConfirmPassword}
@@ -304,44 +226,10 @@ export default function SignupScreen() {
                 )}
               </View>
 
-              {/* Terms and Conditions */}
-              <View style={styles.termsContainer}>
-                <TouchableOpacity
-                  onPress={() => setAcceptTerms(!acceptTerms)}
-                  style={styles.termsRow}
-                >
-                  <View style={[
-                    styles.checkbox,
-                    { borderColor: LuxuryColors.imperialGold }
-                  ]}>
-                    {acceptTerms && (
-                      <View style={styles.checkboxInner} />
-                    )}
-                  </View>
-                  <View style={styles.termsTextContainer}>
-                    <Text style={styles.termsText}>
-                      I agree to the{' '}
-                      <Text style={styles.termsLink}>
-                        Terms of Service
-                      </Text>
-                      {' '}and{' '}
-                      <Text style={styles.termsLink}>
-                        Privacy Policy
-                      </Text>
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-                {errors.terms && (
-                  <Text style={styles.errorText}>
-                    {errors.terms}
-                  </Text>
-                )}
-              </View>
-
-              {/* Sign Up Button - Dark with gold hover effect */}
+              {/* Reset Password Button */}
               <TouchableOpacity
                 style={[
-                  styles.signupButton,
+                  styles.resetButton,
                   { 
                     backgroundColor: isButtonPressed && isFormValid 
                       ? LuxuryColors.imperialGold 
@@ -351,7 +239,7 @@ export default function SignupScreen() {
                     opacity: isFormValid ? 1 : 0.6
                   }
                 ]}
-                onPress={handleSignup}
+                onPress={handleResetPassword}
                 onPressIn={() => setIsButtonPressed(true)}
                 onPressOut={() => setIsButtonPressed(false)}
                 disabled={!isFormValid || isLoading}
@@ -360,29 +248,23 @@ export default function SignupScreen() {
                   <ActivityIndicator color={LuxuryColors.imperialGold} />
                 ) : (
                   <Text style={[
-                    styles.signupButtonText,
+                    styles.resetButtonText,
                     { 
                       color: isButtonPressed && isFormValid 
                         ? LuxuryColors.jetBlack 
                         : LuxuryColors.coolGray 
                     }
                   ]}>
-                    Create Account
+                    Reset Password
                   </Text>
                 )}
               </TouchableOpacity>
             </View>
 
-            {/* Login Link */}
-            <View style={styles.loginContainer}>
-              <Text style={styles.loginText}>
-                Already have an account?{' '}
-                <Text 
-                  style={styles.loginLink}
-                  onPress={handleLogin}
-                >
-                  Sign in
-                </Text>
+            {/* Help Text */}
+            <View style={styles.helpContainer}>
+              <Text style={styles.helpText}>
+                Make sure your new password is strong and different from your previous password.
               </Text>
             </View>
           </ScrollView>
@@ -405,9 +287,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 20,
   },
+  backButton: {
+    position: 'absolute',
+    top: 60,
+    left: 24,
+    zIndex: 1,
+  },
+  backButtonText: {
+    color: '#D4AF37',
+    fontSize: 16,
+    fontWeight: '600',
+  },
   headerContainer: {
-    marginBottom: 40,
+    marginBottom: 48,
     alignItems: 'center',
+    marginTop: 60,
   },
   logoContainer: {
     marginBottom: 24,
@@ -490,42 +384,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: 4,
   },
-  termsContainer: {
-    marginBottom: 32,
-  },
-  termsRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  checkbox: {
-    width: 20,
-    height: 20,
-    borderWidth: 2,
-    borderRadius: 4,
-    marginRight: 12,
-    marginTop: 2,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  checkboxInner: {
-    width: 12,
-    height: 12,
-    backgroundColor: '#D4AF37',
-    borderRadius: 2,
-  },
-  termsTextContainer: {
-    flex: 1,
-  },
-  termsText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  termsLink: {
-    color: '#D4AF37',
-    fontWeight: '600',
-  },
-  signupButton: {
+  resetButton: {
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
@@ -535,19 +394,18 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
   },
-  signupButtonText: {
+  resetButtonText: {
     fontSize: 16,
     fontWeight: '600',
   },
-  loginContainer: {
+  helpContainer: {
     alignItems: 'center',
+    paddingHorizontal: 20,
   },
-  loginText: {
+  helpText: {
     color: '#A5A5A5',
     fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 20,
   },
-  loginLink: {
-    color: '#D4AF37',
-    fontWeight: '600',
-  },
-});
+}); 
