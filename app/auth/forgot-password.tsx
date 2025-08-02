@@ -32,17 +32,14 @@ const LuxuryColors = {
   goldenBrown: '#A67C00',
 };
 
-export default function LoginScreen() {
+export default function ForgotPasswordScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isButtonPressed, setIsButtonPressed] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [errors, setErrors] = useState<{ email?: string }>({});
 
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -50,27 +47,19 @@ export default function LoginScreen() {
   };
 
   const validateForm = () => {
-    const newErrors: { email?: string; password?: string } = {};
+    const newErrors: { email?: string } = {};
 
-    // Email Validation
     if (!email.trim()) {
       newErrors.email = 'Email is required';
     } else if (!validateEmail(email.trim())) {
       newErrors.email = 'Please enter a valid email address (e.g., user@gmail.com)';
     }
 
-    // Password Validation
-    if (!password.trim()) {
-      newErrors.password = 'Password is required';
-    } else if (password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleLogin = async () => {
+  const handleSendOTP = async () => {
     if (!validateForm()) return;
 
     setIsLoading(true);
@@ -78,24 +67,24 @@ export default function LoginScreen() {
     // Simulate API call
     setTimeout(() => {
       setIsLoading(false);
-      // Show success message instead of navigating to tabs
       Alert.alert(
-        'Login Successful', 
-        'Welcome to Privora! The main app features are coming soon.',
-        [{ text: 'OK' }]
+        'OTP Sent', 
+        'A verification code has been sent to your email address.',
+        [
+          {
+            text: 'OK',
+            onPress: () => router.push('/auth/verify-otp')
+          }
+        ]
       );
     }, 2000);
   };
 
-  const handleSignup = () => {
-    router.push('/auth/signup');
+  const handleBackToLogin = () => {
+    router.push('/auth/login');
   };
 
-  const handleForgotPassword = () => {
-    router.push('/auth/forgot-password');
-  };
-
-  const isFormValid = email.trim() && password.trim() && !isLoading;
+  const isFormValid = email.trim() && !isLoading;
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: LuxuryColors.jetBlack }]}>
@@ -108,6 +97,14 @@ export default function LoginScreen() {
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
           >
+            {/* Back Button */}
+            <TouchableOpacity 
+              onPress={handleBackToLogin}
+              style={styles.backButton}
+            >
+              <Text style={styles.backButtonText}>← Back to Login</Text>
+            </TouchableOpacity>
+
             {/* Luxury Header */}
             <View style={styles.headerContainer}>
               <View style={styles.logoContainer}>
@@ -116,10 +113,10 @@ export default function LoginScreen() {
                 </View>
               </View>
               <Text style={styles.welcomeText}>
-                Welcome Back
+                Forgot Password
               </Text>
               <Text style={styles.subtitleText}>
-                Access your wealth management dashboard
+                Enter your email to receive a verification code
               </Text>
             </View>
 
@@ -136,7 +133,7 @@ export default function LoginScreen() {
                 ]}>
                   <TextInput
                     style={styles.textInput}
-                    placeholder="Enter your email"
+                    placeholder="Enter your email address"
                     placeholderTextColor={LuxuryColors.coolGray}
                     value={email}
                     onChangeText={setEmail}
@@ -152,70 +149,10 @@ export default function LoginScreen() {
                 )}
               </View>
 
-              {/* Password Input */}
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>
-                  Password
-                </Text>
-                <View style={[
-                  styles.inputWrapper,
-                  { borderColor: errors.password ? LuxuryColors.royalRed : LuxuryColors.imperialGold }
-                ]}>
-                  <TextInput
-                    style={styles.textInput}
-                    placeholder="Enter your password"
-                    placeholderTextColor={LuxuryColors.coolGray}
-                    value={password}
-                    onChangeText={setPassword}
-                    secureTextEntry={!showPassword}
-                    autoCapitalize="none"
-                  />
-                  <TouchableOpacity
-                    onPress={() => setShowPassword(!showPassword)}
-                    style={styles.showButton}
-                  >
-                    <Text style={styles.showButtonText}>
-                      {showPassword ? 'Hide' : 'Show'}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-                {errors.password && (
-                  <Text style={styles.errorText}>
-                    {errors.password}
-                  </Text>
-                )}
-              </View>
-
-              {/* Remember Me & Forgot Password */}
-              <View style={styles.optionsContainer}>
-                <TouchableOpacity
-                  onPress={() => setRememberMe(!rememberMe)}
-                  style={styles.checkboxContainer}
-                >
-                  <View style={[
-                    styles.checkbox,
-                    { borderColor: LuxuryColors.imperialGold }
-                  ]}>
-                    {rememberMe && (
-                      <View style={styles.checkboxInner} />
-                    )}
-                  </View>
-                  <Text style={styles.checkboxText}>
-                    Remember me
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity onPress={handleForgotPassword}>
-                  <Text style={styles.forgotPasswordText}>
-                    Forgot Password?
-                  </Text>
-                </TouchableOpacity>
-              </View>
-
-              {/* Login Button - Dark with gold hover effect */}
+              {/* Send OTP Button */}
               <TouchableOpacity
                 style={[
-                  styles.loginButton,
+                  styles.sendButton,
                   { 
                     backgroundColor: isButtonPressed && isFormValid 
                       ? LuxuryColors.imperialGold 
@@ -225,7 +162,7 @@ export default function LoginScreen() {
                     opacity: isFormValid ? 1 : 0.6
                   }
                 ]}
-                onPress={handleLogin}
+                onPress={handleSendOTP}
                 onPressIn={() => setIsButtonPressed(true)}
                 onPressOut={() => setIsButtonPressed(false)}
                 disabled={!isFormValid || isLoading}
@@ -234,29 +171,23 @@ export default function LoginScreen() {
                   <ActivityIndicator color={LuxuryColors.imperialGold} />
                 ) : (
                   <Text style={[
-                    styles.loginButtonText,
+                    styles.sendButtonText,
                     { 
                       color: isButtonPressed && isFormValid 
                         ? LuxuryColors.jetBlack 
                         : LuxuryColors.coolGray 
                     }
                   ]}>
-                    Sign In
+                    Send Verification Code
                   </Text>
                 )}
               </TouchableOpacity>
             </View>
 
-            {/* Sign Up Link */}
-            <View style={styles.signupContainer}>
-              <Text style={styles.signupText}>
-                Don't have an account?{' '}
-                <Text 
-                  style={styles.signupLink}
-                  onPress={handleSignup}
-                >
-                  Sign up
-                </Text>
+            {/* Help Text */}
+            <View style={styles.helpContainer}>
+              <Text style={styles.helpText}>
+                We'll send a 6-digit verification code to your email address to help you reset your password.
               </Text>
             </View>
           </ScrollView>
@@ -279,9 +210,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 20,
   },
+  backButton: {
+    position: 'absolute',
+    top: 60,
+    left: 24,
+    zIndex: 1,
+  },
+  backButtonText: {
+    color: '#D4AF37',
+    fontSize: 16,
+    fontWeight: '600',
+  },
   headerContainer: {
     marginBottom: 48,
     alignItems: 'center',
+    marginTop: 60,
   },
   logoContainer: {
     marginBottom: 24,
@@ -329,7 +272,7 @@ const styles = StyleSheet.create({
     elevation: 12,
   },
   inputContainer: {
-    marginBottom: 20,
+    marginBottom: 32,
   },
   inputLabel: {
     fontSize: 16,
@@ -351,54 +294,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#FFFFFF',
   },
-  showButton: {
-    paddingHorizontal: 16,
-  },
-  showButtonText: {
-    color: '#D4AF37',
-    fontSize: 16,
-    fontWeight: '600',
-  },
   errorText: {
     color: '#E74C3C',
     fontSize: 14,
     marginTop: 4,
   },
-  optionsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  checkboxContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  checkbox: {
-    width: 20,
-    height: 20,
-    borderWidth: 2,
-    borderRadius: 4,
-    marginRight: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  checkboxInner: {
-    width: 12,
-    height: 12,
-    backgroundColor: '#D4AF37',
-    borderRadius: 2,
-  },
-  checkboxText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-  },
-  forgotPasswordText: {
-    color: '#D4AF37',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  loginButton: {
+  sendButton: {
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
@@ -408,19 +309,18 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
   },
-  loginButtonText: {
+  sendButtonText: {
     fontSize: 16,
     fontWeight: '600',
   },
-  signupContainer: {
+  helpContainer: {
     alignItems: 'center',
+    paddingHorizontal: 20,
   },
-  signupText: {
+  helpText: {
     color: '#A5A5A5',
     fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 20,
   },
-  signupLink: {
-    color: '#D4AF37',
-    fontWeight: '600',
-  },
-});
+}); 
