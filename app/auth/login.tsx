@@ -55,8 +55,12 @@ export default function LoginScreen() {
     // Simulate API call
     setTimeout(() => {
       setIsLoading(false);
-      // Navigate to main app after successful login
-      router.replace('/(tabs)');
+      // Show success message instead of navigating to tabs
+      Alert.alert(
+        'Login Successful', 
+        'Welcome to Privora! The main app features are coming soon.',
+        [{ text: 'OK' }]
+      );
     }, 2000);
   };
 

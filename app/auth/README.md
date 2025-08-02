@@ -50,8 +50,10 @@ This directory contains the authentication screens for the Privora wealth manage
 ## Navigation Flow
 
 ```
-App Start → /auth/login → /auth/signup (optional) → /(tabs) (main app)
+App Start → /auth/login → /auth/signup (optional)
 ```
+
+**Note:** The app currently only shows authentication screens. Main app features are coming soon.
 
 ## Color Theme
 
