@@ -152,6 +152,14 @@ export default function SignupScreen() {
     router.push('/auth/login');
   };
 
+  const handleTermsOfService = () => {
+    router.push('/auth/terms-of-service');
+  };
+
+  const handlePrivacyPolicy = () => {
+    router.push('/auth/privacy-policy');
+  };
+
   const isFormValid = fullName.trim() && email.trim() && password.trim() && 
                      confirmPassword.trim() && acceptTerms && !isLoading;
 
@@ -321,11 +329,17 @@ export default function SignupScreen() {
                   <View style={styles.termsTextContainer}>
                     <Text style={styles.termsText}>
                       I agree to the{' '}
-                      <Text style={styles.termsLink}>
+                      <Text 
+                        style={styles.termsLink}
+                        onPress={handleTermsOfService}
+                      >
                         Terms of Service
                       </Text>
                       {' '}and{' '}
-                      <Text style={styles.termsLink}>
+                      <Text 
+                        style={styles.termsLink}
+                        onPress={handlePrivacyPolicy}
+                      >
                         Privacy Policy
                       </Text>
                     </Text>

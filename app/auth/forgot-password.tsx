@@ -3,18 +3,18 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    Keyboard,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    TouchableWithoutFeedback,
-    View,
+  ActivityIndicator,
+  Alert,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -102,7 +102,7 @@ export default function ForgotPasswordScreen() {
               onPress={handleBackToLogin}
               style={styles.backButton}
             >
-              <Text style={styles.backButtonText}>← Back to Login</Text>
+              <Text style={styles.backButtonText}>Back to Login</Text>
             </TouchableOpacity>
 
             {/* Luxury Header */}
@@ -215,10 +215,12 @@ const styles = StyleSheet.create({
     top: 60,
     left: 24,
     zIndex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
   },
   backButtonText: {
     color: '#D4AF37',
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
   },
   headerContainer: {
