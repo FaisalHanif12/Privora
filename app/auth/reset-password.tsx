@@ -292,10 +292,12 @@ const styles = StyleSheet.create({
     top: 60,
     left: 24,
     zIndex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
   },
   backButtonText: {
     color: '#D4AF37',
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
   },
   headerContainer: {

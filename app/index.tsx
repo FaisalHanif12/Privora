@@ -1,11 +1,24 @@
 import { router } from 'expo-router';
 import { useEffect } from 'react';
+import { ActivityIndicator, View } from 'react-native';
 
 export default function Index() {
   useEffect(() => {
-    // Redirect directly to login screen immediately
-    router.replace('/auth/login');
+    // Add a small delay to ensure proper initialization
+    const timer = setTimeout(() => {
+      try {
+        router.replace('/auth/login');
+      } catch (error) {
+        console.log('Navigation error:', error);
+      }
+    }, 100);
+
+    return () => clearTimeout(timer);
   }, []);
 
-  return null;
+  return (
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0B0C10' }}>
+      <ActivityIndicator size="large" color="#D4AF37" />
+    </View>
+  );
 }

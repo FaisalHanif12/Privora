@@ -3,20 +3,22 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    Keyboard,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    TouchableWithoutFeedback,
-    View,
+  ActivityIndicator,
+  Image,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import CustomAlert from '../components/CustomAlert';
+import { apiService } from '../services/api';
 
 // Luxury Color Theme
 const LuxuryColors = {
@@ -43,6 +45,27 @@ export default function LoginScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [isButtonPressed, setIsButtonPressed] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  
+  // Custom Alert State
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [alertConfig, setAlertConfig] = useState({
+    title: '',
+    message: '',
+    type: 'info' as 'success' | 'error' | 'warning' | 'info',
+    confirmText: 'OK',
+    showCancel: false,
+    onConfirm: () => {},
+    onCancel: () => {},
+  });
+
+  const showCustomAlert = (config: typeof alertConfig) => {
+    setAlertConfig(config);
+    setAlertVisible(true);
+  };
+
+  const hideCustomAlert = () => {
+    setAlertVisible(false);
+  };
 
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -75,16 +98,84 @@ export default function LoginScreen() {
 
     setIsLoading(true);
     
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      const response = await apiService.login({
+        email: email.trim(),
+        password: password,
+      });
+
+      if (response.success) {
+        // Store token if remember me is checked
+        if (rememberMe && response.token) {
+          // TODO: Implement secure token storage
+          console.log('Token stored for remember me');
+        }
+
+        showCustomAlert({
+          title: 'Login Successful',
+          message: `Welcome back, ${response.data?.fullName || 'User'}!`,
+          type: 'success',
+          confirmText: 'Continue',
+          showCancel: false,
+          onConfirm: () => {
+            hideCustomAlert();
+            // TODO: Navigate to main app
+          },
+          onCancel: () => hideCustomAlert(),
+        });
+      }
+    } catch (error: any) {
+      console.error('Login error:', error);
+      
+      let errorTitle = 'Login Failed';
+      let errorMessage = 'Login failed. Please try again.';
+      let errorType: 'error' | 'warning' = 'error';
+      let showCancel = false;
+      let confirmText = 'OK';
+      let onConfirm = () => hideCustomAlert();
+      let onCancel = () => hideCustomAlert();
+      
+      if (error.message) {
+        if (error.message.includes('Network request failed')) {
+          errorTitle = 'Connection Error';
+          errorMessage = 'Unable to connect to the server. Please check your internet connection and try again.';
+          errorType = 'warning';
+        } else if (error.message.includes('Invalid credentials')) {
+          errorTitle = 'Invalid Credentials';
+          errorMessage = 'The email or password you entered is incorrect. Please try again.';
+          errorType = 'error';
+        } else if (error.message.includes('Please verify your email')) {
+          errorTitle = 'Email Not Verified';
+          errorMessage = 'Please verify your email address before logging in. Check your inbox for a verification link.';
+          errorType = 'warning';
+        } else if (error.message.includes('There is no user with that email')) {
+          errorTitle = 'Account Not Found';
+          errorMessage = 'No account found with this email address. Please create an account first.';
+          errorType = 'warning';
+          showCancel = true;
+          confirmText = 'Create Account';
+          onConfirm = () => {
+            hideCustomAlert();
+            router.push('/auth/signup');
+          };
+          onCancel = () => hideCustomAlert();
+        } else {
+          errorMessage = error.message;
+        }
+      }
+
+      showCustomAlert({
+        title: errorTitle,
+        message: errorMessage,
+        type: errorType,
+        confirmText,
+        showCancel,
+        onConfirm,
+        onCancel,
+      });
+    } finally {
       setIsLoading(false);
-      // Show success message instead of navigating to tabs
-      Alert.alert(
-        'Login Successful', 
-        'Welcome to Privora! The main app features are coming soon.',
-        [{ text: 'OK' }]
-      );
-    }, 2000);
+    }
   };
 
   const handleSignup = () => {
@@ -111,9 +202,11 @@ export default function LoginScreen() {
             {/* Luxury Header */}
             <View style={styles.headerContainer}>
               <View style={styles.logoContainer}>
-                <View style={styles.logoCircle}>
-                  <Text style={styles.logoText}>P</Text>
-                </View>
+                <Image 
+                  source={require('../../assets/images/Privora-Logo.png')}
+                  style={styles.logoImage}
+                  resizeMode="contain"
+                />
               </View>
               <Text style={styles.welcomeText}>
                 Welcome Back
@@ -262,6 +355,18 @@ export default function LoginScreen() {
           </ScrollView>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
+
+      {/* Custom Alert */}
+      <CustomAlert
+        visible={alertVisible}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+        confirmText={alertConfig.confirmText}
+        showCancel={alertConfig.showCancel}
+        onConfirm={alertConfig.onConfirm}
+        onCancel={alertConfig.onCancel}
+      />
     </SafeAreaView>
   );
 }
@@ -284,7 +389,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logoContainer: {
-    marginBottom: 24,
+    marginBottom: 1,
   },
   logoCircle: {
     width: 80,
@@ -303,6 +408,11 @@ const styles = StyleSheet.create({
     fontSize: 36,
     fontWeight: 'bold',
     color: '#0B0C10',
+  },
+  logoImage: {
+    width: 140,
+    height: 140,
+    resizeMode: 'contain',
   },
   welcomeText: {
     fontSize: 32,

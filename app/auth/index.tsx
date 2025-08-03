@@ -2,9 +2,9 @@ import { router } from 'expo-router';
 import { useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
-export default function NotFoundScreen() {
+export default function AuthIndex() {
   useEffect(() => {
-    // Add a small delay to ensure proper initialization
+    // Redirect to login as default auth screen
     const timer = setTimeout(() => {
       try {
         router.replace('/auth/login');
@@ -21,4 +21,4 @@ export default function NotFoundScreen() {
       <ActivityIndicator size="large" color="#D4AF37" />
     </View>
   );
-}
+} 

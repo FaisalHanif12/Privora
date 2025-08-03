@@ -3,20 +3,22 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    Keyboard,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    TouchableWithoutFeedback,
-    View,
+  ActivityIndicator,
+  Image,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import CustomAlert from '../components/CustomAlert';
+import { apiService } from '../services/api';
 
 // Luxury Color Theme
 const LuxuryColors = {
@@ -41,6 +43,27 @@ export default function ForgotPasswordScreen() {
   const [isButtonPressed, setIsButtonPressed] = useState(false);
   const [errors, setErrors] = useState<{ email?: string }>({});
 
+  // Custom Alert State
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [alertConfig, setAlertConfig] = useState({
+    title: '',
+    message: '',
+    type: 'info' as 'success' | 'error' | 'warning' | 'info',
+    confirmText: 'OK',
+    showCancel: false,
+    onConfirm: () => {},
+    onCancel: () => {},
+  });
+
+  const showCustomAlert = (config: typeof alertConfig) => {
+    setAlertConfig(config);
+    setAlertVisible(true);
+  };
+
+  const hideCustomAlert = () => {
+    setAlertVisible(false);
+  };
+
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
@@ -64,20 +87,47 @@ export default function ForgotPasswordScreen() {
 
     setIsLoading(true);
     
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      const response = await apiService.forgotPassword(email.trim());
+
+      if (response.success) {
+        showCustomAlert({
+          title: 'Reset Email Sent', 
+          message: 'A password reset link has been sent to your email address. Please check your inbox.',
+          type: 'success',
+          confirmText: 'OK',
+          showCancel: false,
+          onConfirm: hideCustomAlert,
+          onCancel: hideCustomAlert,
+        });
+      }
+    } catch (error: any) {
+      console.error('Forgot password error:', error);
+      
+      let errorMessage = 'Failed to send reset email. Please try again.';
+      
+      if (error.message) {
+        if (error.message.includes('There is no user with that email')) {
+          errorMessage = 'No account found with this email address. Please check your email or create a new account.';
+        } else if (error.message.includes('Email could not be sent')) {
+          errorMessage = 'Failed to send email. Please try again later.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+
+             showCustomAlert({
+         title: 'Error',
+         message: errorMessage,
+         type: 'error',
+         confirmText: 'OK',
+         showCancel: false,
+         onConfirm: hideCustomAlert,
+         onCancel: hideCustomAlert,
+       });
+    } finally {
       setIsLoading(false);
-      Alert.alert(
-        'OTP Sent', 
-        'A verification code has been sent to your email address.',
-        [
-          {
-            text: 'OK',
-            onPress: () => router.push('/auth/verify-otp')
-          }
-        ]
-      );
-    }, 2000);
+    }
   };
 
   const handleBackToLogin = () => {
@@ -102,15 +152,17 @@ export default function ForgotPasswordScreen() {
               onPress={handleBackToLogin}
               style={styles.backButton}
             >
-              <Text style={styles.backButtonText}>← Back to Login</Text>
+              <Text style={styles.backButtonText}>Back to Login</Text>
             </TouchableOpacity>
 
             {/* Luxury Header */}
             <View style={styles.headerContainer}>
               <View style={styles.logoContainer}>
-                <View style={styles.logoCircle}>
-                  <Text style={styles.logoText}>P</Text>
-                </View>
+                <Image 
+                  source={require('../../assets/images/Privora-Logo.png')}
+                  style={styles.logoImage}
+                  resizeMode="contain"
+                />
               </View>
               <Text style={styles.welcomeText}>
                 Forgot Password
@@ -193,6 +245,16 @@ export default function ForgotPasswordScreen() {
           </ScrollView>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
+      <CustomAlert
+        visible={alertVisible}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+        confirmText={alertConfig.confirmText}
+        showCancel={alertConfig.showCancel}
+        onConfirm={alertConfig.onConfirm}
+        onCancel={alertConfig.onCancel}
+      />
     </SafeAreaView>
   );
 }
@@ -215,10 +277,12 @@ const styles = StyleSheet.create({
     top: 60,
     left: 24,
     zIndex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
   },
   backButtonText: {
     color: '#D4AF37',
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
   },
   headerContainer: {
@@ -227,7 +291,7 @@ const styles = StyleSheet.create({
     marginTop: 60,
   },
   logoContainer: {
-    marginBottom: 24,
+    marginBottom: 1,
   },
   logoCircle: {
     width: 80,
@@ -246,6 +310,11 @@ const styles = StyleSheet.create({
     fontSize: 36,
     fontWeight: 'bold',
     color: '#0B0C10',
+  },
+  logoImage: {
+    width: 140,
+    height: 140,
+    resizeMode: 'contain',
   },
   welcomeText: {
     fontSize: 32,
