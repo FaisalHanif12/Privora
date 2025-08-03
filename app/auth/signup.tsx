@@ -3,20 +3,22 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    Keyboard,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    TouchableWithoutFeedback,
-    View,
+  ActivityIndicator,
+  Image,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import CustomAlert from '../components/CustomAlert';
+import { apiService } from '../services/api';
 
 // Luxury Color Theme
 const LuxuryColors = {
@@ -52,6 +54,27 @@ export default function SignupScreen() {
     confirmPassword?: string;
     terms?: string;
   }>({});
+
+  // Custom Alert State
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [alertConfig, setAlertConfig] = useState({
+    title: '',
+    message: '',
+    type: 'info' as 'success' | 'error' | 'warning' | 'info',
+    confirmText: 'OK',
+    showCancel: false,
+    onConfirm: () => {},
+    onCancel: () => {},
+  });
+
+  const showCustomAlert = (config: typeof alertConfig) => {
+    setAlertConfig(config);
+    setAlertVisible(true);
+  };
+
+  const hideCustomAlert = () => {
+    setAlertVisible(false);
+  };
 
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -137,15 +160,68 @@ export default function SignupScreen() {
 
     setIsLoading(true);
     
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      const response = await apiService.register({
+        fullName: fullName,
+        email: email,
+        password: password,
+      });
+
+      if (response.success) {
+        showCustomAlert({
+          title: 'Account Created',
+          message: 'Your account has been created successfully! Please check your email for verification.',
+          type: 'success',
+          confirmText: 'OK',
+          showCancel: false,
+          onConfirm: () => {
+            router.push('/auth/login');
+            hideCustomAlert();
+          },
+          onCancel: () => hideCustomAlert(),
+        });
+      } else {
+        showCustomAlert({
+          title: 'Error',
+          message: response.message || 'Failed to create account.',
+          type: 'error',
+          confirmText: 'OK',
+          showCancel: false,
+          onConfirm: () => hideCustomAlert(),
+          onCancel: () => hideCustomAlert(),
+        });
+      }
+    } catch (error: any) {
+      console.error('Signup error:', error);
+      
+      let errorMessage = 'Failed to create account. Please try again.';
+      
+      if (error.message) {
+        if (error.message.includes('User already exists')) {
+          errorMessage = 'An account with this email already exists. Please login instead.';
+        } else if (error.message.includes('Please add a valid email')) {
+          errorMessage = 'Please enter a valid email address.';
+        } else if (error.message.includes('Please add a password')) {
+          errorMessage = 'Password is required.';
+        } else if (error.message.includes('Please add a full name')) {
+          errorMessage = 'Full name is required.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+
+             showCustomAlert({
+         title: 'Signup Failed',
+         message: errorMessage,
+         type: 'error',
+         confirmText: 'OK',
+         showCancel: false,
+         onConfirm: () => hideCustomAlert(),
+         onCancel: () => hideCustomAlert(),
+       });
+    } finally {
       setIsLoading(false);
-      Alert.alert(
-        'Account Created', 
-        'Your account has been created successfully! Please check your email for verification.',
-        [{ text: 'OK' }]
-      );
-    }, 2000);
+    }
   };
 
   const handleLogin = () => {
@@ -177,9 +253,11 @@ export default function SignupScreen() {
             {/* Luxury Header */}
             <View style={styles.headerContainer}>
               <View style={styles.logoContainer}>
-                <View style={styles.logoCircle}>
-                  <Text style={styles.logoText}>P</Text>
-                </View>
+                <Image 
+                  source={require('../../assets/images/Privora-Logo.png')}
+                  style={styles.logoImage}
+                  resizeMode="contain"
+                />
               </View>
               <Text style={styles.welcomeText}>
                 Create Account
@@ -289,7 +367,7 @@ export default function SignupScreen() {
                 ]}>
                   <TextInput
                     style={styles.textInput}
-                    placeholder="Confirm your password"
+                    placeholder="Confirm password"
                     placeholderTextColor={LuxuryColors.coolGray}
                     value={confirmPassword}
                     onChangeText={setConfirmPassword}
@@ -402,6 +480,16 @@ export default function SignupScreen() {
           </ScrollView>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
+      <CustomAlert
+        visible={alertVisible}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+        confirmText={alertConfig.confirmText}
+        showCancel={alertConfig.showCancel}
+        onConfirm={alertConfig.onConfirm}
+        onCancel={alertConfig.onCancel}
+      />
     </SafeAreaView>
   );
 }
@@ -424,7 +512,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logoContainer: {
-    marginBottom: 24,
+    marginBottom: 1,
   },
   logoCircle: {
     width: 80,
@@ -443,6 +531,11 @@ const styles = StyleSheet.create({
     fontSize: 36,
     fontWeight: 'bold',
     color: '#0B0C10',
+  },
+  logoImage: {
+    width: 140,
+    height: 140,
+    resizeMode: 'contain',
   },
   welcomeText: {
     fontSize: 32,
