@@ -1,22 +1,24 @@
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import React, { useRef, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    Keyboard,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    TouchableWithoutFeedback,
-    View,
+  ActivityIndicator,
+  Image,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import CustomAlert from '../components/CustomAlert';
+import { apiService } from '../services/api';
 
 // Luxury Color Theme
 const LuxuryColors = {
@@ -35,12 +37,34 @@ const LuxuryColors = {
 export default function VerifyOTPScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const { email } = useLocalSearchParams<{ email: string }>();
   
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [isLoading, setIsLoading] = useState(false);
   const [isButtonPressed, setIsButtonPressed] = useState(false);
   const [errors, setErrors] = useState<{ otp?: string }>({});
   const inputRefs = useRef<TextInput[]>([]);
+
+  // Custom Alert State
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [alertConfig, setAlertConfig] = useState({
+    title: '',
+    message: '',
+    type: 'info' as 'success' | 'error' | 'warning' | 'info',
+    confirmText: 'OK',
+    showCancel: false,
+    onConfirm: () => {},
+    onCancel: () => {},
+  });
+
+  const showCustomAlert = (config: typeof alertConfig) => {
+    setAlertConfig(config);
+    setAlertVisible(true);
+  };
+
+  const hideCustomAlert = () => {
+    setAlertVisible(false);
+  };
 
   const validateOTP = () => {
     const otpString = otp.join('');
@@ -78,28 +102,97 @@ export default function VerifyOTPScreen() {
 
     setIsLoading(true);
     
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      const otpString = otp.join('');
+      const response = await apiService.verifyOTP(email, otpString);
+
+      if (response.success) {
+        showCustomAlert({
+          title: 'OTP Verified', 
+          message: 'Your verification code has been verified successfully.',
+          type: 'success',
+          confirmText: 'Continue',
+          showCancel: false,
+          onConfirm: () => {
+            hideCustomAlert();
+            // Navigate to reset password screen with email and OTP
+            router.push({
+              pathname: '/auth/reset-password',
+              params: { 
+                email: email,
+                otp: otpString
+              }
+            });
+          },
+          onCancel: hideCustomAlert,
+        });
+      }
+    } catch (error: any) {
+      console.error('Verify OTP error:', error);
+      
+      let errorMessage = 'Failed to verify OTP. Please try again.';
+      
+      if (error.message) {
+        if (error.message.includes('Invalid or expired OTP')) {
+          errorMessage = 'Invalid or expired verification code. Please check your code or request a new one.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+
+      showCustomAlert({
+        title: 'Error',
+        message: errorMessage,
+        type: 'error',
+        confirmText: 'OK',
+        showCancel: false,
+        onConfirm: hideCustomAlert,
+        onCancel: hideCustomAlert,
+      });
+    } finally {
       setIsLoading(false);
-      Alert.alert(
-        'OTP Verified', 
-        'Your verification code has been verified successfully.',
-        [
-          {
-            text: 'OK',
-            onPress: () => router.push('/auth/reset-password')
-          }
-        ]
-      );
-    }, 2000);
+    }
   };
 
-  const handleResendOTP = () => {
-    Alert.alert(
-      'OTP Resent', 
-      'A new verification code has been sent to your email.',
-      [{ text: 'OK' }]
-    );
+  const handleResendOTP = async () => {
+    try {
+      const response = await apiService.resendOTP(email);
+
+      if (response.success) {
+        // Clear the OTP input fields
+        setOtp(['', '', '', '', '', '']);
+        // Clear any errors
+        setErrors({});
+        
+        showCustomAlert({
+          title: 'OTP Resent', 
+          message: 'A new verification code has been sent to your email.',
+          type: 'success',
+          confirmText: 'OK',
+          showCancel: false,
+          onConfirm: hideCustomAlert,
+          onCancel: hideCustomAlert,
+        });
+      }
+    } catch (error: any) {
+      console.error('Resend OTP error:', error);
+      
+      let errorMessage = 'Failed to resend OTP. Please try again.';
+      
+      if (error.message) {
+        errorMessage = error.message;
+      }
+
+      showCustomAlert({
+        title: 'Error',
+        message: errorMessage,
+        type: 'error',
+        confirmText: 'OK',
+        showCancel: false,
+        onConfirm: hideCustomAlert,
+        onCancel: hideCustomAlert,
+      });
+    }
   };
 
   const handleBackToForgotPassword = () => {
@@ -124,15 +217,17 @@ export default function VerifyOTPScreen() {
               onPress={handleBackToForgotPassword}
               style={styles.backButton}
             >
-              <Text style={styles.backButtonText}>← Back</Text>
+              <Text style={styles.backButtonText}>Back</Text>
             </TouchableOpacity>
 
             {/* Luxury Header */}
             <View style={styles.headerContainer}>
               <View style={styles.logoContainer}>
-                <View style={styles.logoCircle}>
-                  <Text style={styles.logoText}>P</Text>
-                </View>
+                <Image 
+                  source={require('../../assets/images/Privora-Logo.png')}
+                  style={styles.logoImage}
+                  resizeMode="contain"
+                />
               </View>
               <Text style={styles.welcomeText}>
                 Verify OTP
@@ -235,6 +330,16 @@ export default function VerifyOTPScreen() {
           </ScrollView>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
+      <CustomAlert
+        visible={alertVisible}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+        confirmText={alertConfig.confirmText}
+        showCancel={alertConfig.showCancel}
+        onConfirm={alertConfig.onConfirm}
+        onCancel={alertConfig.onCancel}
+      />
     </SafeAreaView>
   );
 }
@@ -273,23 +378,9 @@ const styles = StyleSheet.create({
   logoContainer: {
     marginBottom: 24,
   },
-  logoCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#D4AF37',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#D4AF37',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  logoText: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    color: '#0B0C10',
+  logoImage: {
+    width: 120, // Adjust as needed for the new logo size
+    height: 120, // Adjust as needed for the new logo size
   },
   welcomeText: {
     fontSize: 32,

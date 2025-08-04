@@ -119,7 +119,7 @@ export default function LoginScreen() {
           showCancel: false,
           onConfirm: () => {
             hideCustomAlert();
-            // TODO: Navigate to main app
+            router.replace('/dashboard');
           },
           onCancel: () => hideCustomAlert(),
         });

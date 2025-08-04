@@ -1,22 +1,24 @@
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    Keyboard,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    TouchableWithoutFeedback,
-    View,
+  ActivityIndicator,
+  Image,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import CustomAlert from '../components/CustomAlert';
+import { apiService } from '../services/api';
 
 // Luxury Color Theme
 const LuxuryColors = {
@@ -35,6 +37,7 @@ const LuxuryColors = {
 export default function ResetPasswordScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const { email, otp } = useLocalSearchParams<{ email: string; otp: string }>();
   
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -46,6 +49,27 @@ export default function ResetPasswordScreen() {
     newPassword?: string; 
     confirmPassword?: string;
   }>({});
+
+  // Custom Alert State
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [alertConfig, setAlertConfig] = useState({
+    title: '',
+    message: '',
+    type: 'info' as 'success' | 'error' | 'warning' | 'info',
+    confirmText: 'OK',
+    showCancel: false,
+    onConfirm: () => {},
+    onCancel: () => {},
+  });
+
+  const showCustomAlert = (config: typeof alertConfig) => {
+    setAlertConfig(config);
+    setAlertVisible(true);
+  };
+
+  const hideCustomAlert = () => {
+    setAlertVisible(false);
+  };
 
   const validatePassword = (password: string) => {
     const minLength = password.length >= 6;
@@ -100,20 +124,48 @@ export default function ResetPasswordScreen() {
 
     setIsLoading(true);
     
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      const response = await apiService.resetPassword(email, otp, newPassword);
+
+      if (response.success) {
+        showCustomAlert({
+          title: 'Password Reset Successfully', 
+          message: 'Your password has been reset successfully. You can now login with your new password.',
+          type: 'success',
+          confirmText: 'OK',
+          showCancel: false,
+          onConfirm: () => {
+            hideCustomAlert();
+            router.push('/auth/login');
+          },
+          onCancel: hideCustomAlert,
+        });
+      }
+    } catch (error: any) {
+      console.error('Reset password error:', error);
+      
+      let errorMessage = 'Failed to reset password. Please try again.';
+      
+      if (error.message) {
+        if (error.message.includes('Invalid or expired OTP')) {
+          errorMessage = 'Your verification code has expired. Please go back and request a new code.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+
+      showCustomAlert({
+        title: 'Error',
+        message: errorMessage,
+        type: 'error',
+        confirmText: 'OK',
+        showCancel: false,
+        onConfirm: hideCustomAlert,
+        onCancel: hideCustomAlert,
+      });
+    } finally {
       setIsLoading(false);
-      Alert.alert(
-        'Password Reset Successfully', 
-        'Your password has been reset successfully. You can now login with your new password.',
-        [
-          {
-            text: 'OK',
-            onPress: () => router.push('/auth/login')
-          }
-        ]
-      );
-    }, 2000);
+    }
   };
 
   const handleBackToLogin = () => {
@@ -138,15 +190,17 @@ export default function ResetPasswordScreen() {
               onPress={handleBackToLogin}
               style={styles.backButton}
             >
-              <Text style={styles.backButtonText}>← Back to Login</Text>
+              <Text style={styles.backButtonText}>Back to Login</Text>
             </TouchableOpacity>
 
             {/* Luxury Header */}
             <View style={styles.headerContainer}>
               <View style={styles.logoContainer}>
-                <View style={styles.logoCircle}>
-                  <Text style={styles.logoText}>P</Text>
-                </View>
+                <Image 
+                  source={require('../../assets/images/Privora-Logo.png')}
+                  style={styles.logoImage}
+                  resizeMode="contain"
+                />
               </View>
               <Text style={styles.welcomeText}>
                 Reset Password
@@ -169,7 +223,7 @@ export default function ResetPasswordScreen() {
                 ]}>
                   <TextInput
                     style={styles.textInput}
-                    placeholder="Enter your new password"
+                    placeholder="Enter new password"
                     placeholderTextColor={LuxuryColors.coolGray}
                     value={newPassword}
                     onChangeText={setNewPassword}
@@ -203,7 +257,7 @@ export default function ResetPasswordScreen() {
                 ]}>
                   <TextInput
                     style={styles.textInput}
-                    placeholder="Confirm your new password"
+                    placeholder="Confirm new password"
                     placeholderTextColor={LuxuryColors.coolGray}
                     value={confirmPassword}
                     onChangeText={setConfirmPassword}
@@ -270,6 +324,16 @@ export default function ResetPasswordScreen() {
           </ScrollView>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
+      <CustomAlert
+        visible={alertVisible}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+        confirmText={alertConfig.confirmText}
+        showCancel={alertConfig.showCancel}
+        onConfirm={alertConfig.onConfirm}
+        onCancel={alertConfig.onCancel}
+      />
     </SafeAreaView>
   );
 }
@@ -308,23 +372,9 @@ const styles = StyleSheet.create({
   logoContainer: {
     marginBottom: 24,
   },
-  logoCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#D4AF37',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#D4AF37',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  logoText: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    color: '#0B0C10',
+  logoImage: {
+    width: 120,
+    height: 120,
   },
   welcomeText: {
     fontSize: 32,

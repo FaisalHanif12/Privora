@@ -23,8 +23,19 @@ interface ForgotPasswordRequest {
   email: string;
 }
 
+interface VerifyOTPRequest {
+  email: string;
+  otp: string;
+}
+
 interface ResetPasswordRequest {
+  email: string;
+  otp: string;
   password: string;
+}
+
+interface ResendOTPRequest {
+  email: string;
 }
 
 class ApiService {
@@ -72,7 +83,7 @@ class ApiService {
     });
   }
 
-  // Forgot password
+  // Forgot password - send OTP
   async forgotPassword(email: string): Promise<ApiResponse> {
     return this.makeRequest('/auth/forgot-password', {
       method: 'POST',
@@ -80,11 +91,27 @@ class ApiService {
     });
   }
 
-  // Reset password
-  async resetPassword(token: string, password: string): Promise<ApiResponse> {
-    return this.makeRequest(`/auth/reset-password/${token}`, {
-      method: 'PUT',
-      body: JSON.stringify({ password }),
+  // Verify OTP
+  async verifyOTP(email: string, otp: string): Promise<ApiResponse> {
+    return this.makeRequest('/auth/verify-otp', {
+      method: 'POST',
+      body: JSON.stringify({ email, otp }),
+    });
+  }
+
+  // Reset password with OTP
+  async resetPassword(email: string, otp: string, password: string): Promise<ApiResponse> {
+    return this.makeRequest('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ email, otp, password }),
+    });
+  }
+
+  // Resend OTP
+  async resendOTP(email: string): Promise<ApiResponse> {
+    return this.makeRequest('/auth/resend-otp', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
     });
   }
 
@@ -107,5 +134,11 @@ class ApiService {
 }
 
 export const apiService = new ApiService();
-export type { ApiResponse, ForgotPasswordRequest, LoginRequest, RegisterRequest, ResetPasswordRequest };
+export type {
+    ApiResponse,
+    ForgotPasswordRequest,
+    LoginRequest,
+    RegisterRequest, ResendOTPRequest, ResetPasswordRequest,
+    VerifyOTPRequest
+};
 
