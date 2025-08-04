@@ -92,19 +92,26 @@ export default function ForgotPasswordScreen() {
 
       if (response.success) {
         showCustomAlert({
-          title: 'Reset Email Sent', 
-          message: 'A password reset link has been sent to your email address. Please check your inbox.',
+          title: 'Verification Code Sent', 
+          message: 'A 6-digit verification code has been sent to your email address. Please check your inbox.',
           type: 'success',
           confirmText: 'OK',
           showCancel: false,
-          onConfirm: hideCustomAlert,
+          onConfirm: () => {
+            hideCustomAlert();
+            // Navigate to verify OTP screen with email
+            router.push({
+              pathname: '/auth/verify-otp',
+              params: { email: email.trim() }
+            });
+          },
           onCancel: hideCustomAlert,
         });
       }
     } catch (error: any) {
       console.error('Forgot password error:', error);
       
-      let errorMessage = 'Failed to send reset email. Please try again.';
+      let errorMessage = 'Failed to send verification code. Please try again.';
       
       if (error.message) {
         if (error.message.includes('There is no user with that email')) {
@@ -116,15 +123,15 @@ export default function ForgotPasswordScreen() {
         }
       }
 
-             showCustomAlert({
-         title: 'Error',
-         message: errorMessage,
-         type: 'error',
-         confirmText: 'OK',
-         showCancel: false,
-         onConfirm: hideCustomAlert,
-         onCancel: hideCustomAlert,
-       });
+      showCustomAlert({
+        title: 'Error',
+        message: errorMessage,
+        type: 'error',
+        confirmText: 'OK',
+        showCancel: false,
+        onConfirm: hideCustomAlert,
+        onCancel: hideCustomAlert,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -293,27 +300,9 @@ const styles = StyleSheet.create({
   logoContainer: {
     marginBottom: 1,
   },
-  logoCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#D4AF37',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#D4AF37',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  logoText: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    color: '#0B0C10',
-  },
   logoImage: {
-    width: 140,
-    height: 140,
+    width: 120,
+    height: 120,
     resizeMode: 'contain',
   },
   welcomeText: {
