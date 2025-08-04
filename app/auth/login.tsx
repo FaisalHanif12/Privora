@@ -19,6 +19,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import CustomAlert from '../components/CustomAlert';
 import { apiService } from '../services/api';
+import { useUser } from '../context/UserContext';
 
 // Luxury Color Theme
 const LuxuryColors = {
@@ -37,6 +38,7 @@ const LuxuryColors = {
 export default function LoginScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const { setUser } = useUser();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -105,6 +107,12 @@ export default function LoginScreen() {
       });
 
       if (response.success) {
+        // Store real user data in context from backend response
+        setUser({
+          fullName: response.data?.fullName || 'User',
+          email: email.trim(),
+        });
+
         // Store token if remember me is checked
         if (rememberMe && response.token) {
           // TODO: Implement secure token storage

@@ -7,7 +7,10 @@ export default function Index() {
     // Add a small delay to ensure proper initialization
     const timer = setTimeout(() => {
       try {
-        router.replace('/auth/login');
+        // Skip authentication for development - go directly to dashboard
+        router.replace('/dashboard');
+        // TODO: Uncomment below line when authentication is needed
+        // router.replace('/auth/login');
       } catch (error) {
         console.log('Navigation error:', error);
       }
