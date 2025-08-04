@@ -3,20 +3,21 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  ActivityIndicator,
+  Animated,
+  Dimensions,
   Image,
-  Keyboard,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   TouchableWithoutFeedback,
-  View,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useUser } from './context/UserContext';
+import { UserIcon } from './components/UserIcon';
 
 // Luxury Color Theme
 const LuxuryColors = {
@@ -32,12 +33,27 @@ const LuxuryColors = {
   goldenBrown: '#A67C00',
 };
 
+const { width } = Dimensions.get('window');
+
 export default function DashboardScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const { user, loading } = useUser();
   
-  const [userName, setUserName] = useState('John Doe'); // This would come from login response or stored user data
   const [isLoading, setIsLoading] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [sidebarAnimation] = useState(new Animated.Value(-width * 0.8));
+
+  // Show loading state while user data is being fetched
+  if (loading) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: LuxuryColors.jetBlack }]}>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Loading...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   const handleLogout = () => {
     // TODO: Clear stored tokens
@@ -45,17 +61,137 @@ export default function DashboardScreen() {
   };
 
   const handleProfile = () => {
-    // TODO: Navigate to profile screen
-    console.log('Navigate to profile');
+    router.push('/profile');
   };
 
   const handleSettings = () => {
-    // TODO: Navigate to settings screen
-    console.log('Navigate to settings');
+    router.push('/profile');
   };
+
+  const toggleSidebar = () => {
+    if (isSidebarOpen) {
+      Animated.timing(sidebarAnimation, {
+        toValue: -width * 0.8,
+        duration: 300,
+        useNativeDriver: false,
+      }).start();
+    } else {
+      Animated.timing(sidebarAnimation, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: false,
+      }).start();
+    }
+    setIsSidebarOpen(!isSidebarOpen);
+  };
+
+  const closeSidebar = () => {
+    if (isSidebarOpen) {
+      Animated.timing(sidebarAnimation, {
+        toValue: -width * 0.8,
+        duration: 300,
+        useNativeDriver: false,
+      }).start();
+      setIsSidebarOpen(false);
+    }
+  };
+
+  const Sidebar = () => (
+    <Animated.View style={[styles.sidebar, { transform: [{ translateX: sidebarAnimation }] }]}>
+      <View style={styles.sidebarHeader}>
+        <Image 
+          source={require('../assets/images/Privora-Logo.png')}
+          style={styles.sidebarLogo}
+          resizeMode="contain"
+        />
+        <Text style={styles.sidebarTitle}>Privora</Text>
+      </View>
+      
+      <View style={styles.sidebarMenu}>
+        <TouchableOpacity style={styles.sidebarMenuItem}>
+          <Text style={styles.sidebarMenuIcon}>🏠</Text>
+          <Text style={styles.sidebarMenuText}>Dashboard</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.sidebarMenuItem}>
+          <Text style={styles.sidebarMenuIcon}>📊</Text>
+          <Text style={styles.sidebarMenuText}>Portfolio</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.sidebarMenuItem}>
+          <Text style={styles.sidebarMenuIcon}>💼</Text>
+          <Text style={styles.sidebarMenuText}>Investments</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.sidebarMenuItem}>
+          <Text style={styles.sidebarMenuIcon}>📈</Text>
+          <Text style={styles.sidebarMenuText}>Analytics</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.sidebarMenuItem}>
+          <Text style={styles.sidebarMenuIcon}>🎯</Text>
+          <Text style={styles.sidebarMenuText}>Goals</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.sidebarMenuItem} onPress={handleProfile}>
+          <Text style={styles.sidebarMenuIcon}>⚙️</Text>
+          <Text style={styles.sidebarMenuText}>Settings</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.sidebarMenuItem}>
+          <Text style={styles.sidebarMenuIcon}>📱</Text>
+          <Text style={styles.sidebarMenuText}>Support</Text>
+        </TouchableOpacity>
+      </View>
+      
+      <TouchableOpacity style={styles.sidebarLogout} onPress={handleLogout}>
+        <Text style={styles.sidebarMenuIcon}>🚪</Text>
+        <Text style={styles.sidebarMenuText}>Sign Out</Text>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+
+  const BottomNavbar = () => (
+    <View style={styles.bottomNavbar}>
+      <TouchableOpacity style={styles.bottomNavItem}>
+        <Text style={styles.bottomNavIcon}>🏠</Text>
+        <Text style={styles.bottomNavText}>Home</Text>
+      </TouchableOpacity>
+      
+      <TouchableOpacity style={styles.bottomNavItem}>
+        <Text style={styles.bottomNavIcon}>📊</Text>
+        <Text style={styles.bottomNavText}>Portfolio</Text>
+      </TouchableOpacity>
+      
+      <TouchableOpacity style={styles.bottomNavItem}>
+        <Text style={styles.bottomNavIcon}>💼</Text>
+        <Text style={styles.bottomNavText}>Invest</Text>
+      </TouchableOpacity>
+      
+      <TouchableOpacity style={styles.bottomNavItem}>
+        <Text style={styles.bottomNavIcon}>📈</Text>
+        <Text style={styles.bottomNavText}>Analytics</Text>
+      </TouchableOpacity>
+      
+      <TouchableOpacity style={styles.bottomNavItem} onPress={handleProfile}>
+        <Text style={styles.bottomNavIcon}>👤</Text>
+        <Text style={styles.bottomNavText}>Profile</Text>
+      </TouchableOpacity>
+    </View>
+  );
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: LuxuryColors.jetBlack }]}>
+      {/* Sidebar Overlay */}
+      {isSidebarOpen && (
+        <TouchableWithoutFeedback onPress={closeSidebar}>
+          <View style={styles.sidebarOverlay} />
+        </TouchableWithoutFeedback>
+      )}
+      
+      {/* Sidebar */}
+      <Sidebar />
+      
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
@@ -67,28 +203,21 @@ export default function DashboardScreen() {
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.headerLeft}>
-              <Image 
-                source={require('../assets/images/Privora-Logo.png')}
-                style={styles.logoImage}
-                resizeMode="contain"
-              />
+              <TouchableOpacity onPress={toggleSidebar} style={styles.menuButton}>
+                <Text style={styles.menuIcon}>☰</Text>
+              </TouchableOpacity>
               <View style={styles.welcomeContainer}>
                 <Text style={styles.welcomeText}>
                   Welcome back,
                 </Text>
                 <Text style={styles.userNameText}>
-                  {userName}
+                  {user?.fullName || 'User'}
                 </Text>
               </View>
             </View>
-            <View style={styles.headerRight}>
-              <TouchableOpacity onPress={handleProfile} style={styles.iconButton}>
-                <Text style={styles.iconText}>👤</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={handleSettings} style={styles.iconButton}>
-                <Text style={styles.iconText}>⚙️</Text>
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity onPress={handleProfile} style={styles.profileButton}>
+              <UserIcon size={24} color={LuxuryColors.luxeWhite} />
+            </TouchableOpacity>
           </View>
 
           {/* Quick Stats */}
@@ -195,16 +324,11 @@ export default function DashboardScreen() {
               </TouchableOpacity>
             </View>
           </View>
-
-          {/* Logout Button */}
-          <TouchableOpacity 
-            style={styles.logoutButton}
-            onPress={handleLogout}
-          >
-            <Text style={styles.logoutButtonText}>Sign Out</Text>
-          </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
+      
+      {/* Bottom Navbar */}
+      <BottomNavbar />
     </SafeAreaView>
   );
 }
@@ -219,6 +343,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 24,
     paddingVertical: 20,
+    paddingBottom: 100, // Space for bottom navbar
   },
   header: {
     flexDirection: 'row',
@@ -229,12 +354,20 @@ const styles = StyleSheet.create({
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
   },
-  logoImage: {
+  menuButton: {
     width: 40,
     height: 40,
-    resizeMode: 'contain',
+    borderRadius: 20,
+    backgroundColor: LuxuryColors.charcoalGray,
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: 12,
+  },
+  menuIcon: {
+    fontSize: 18,
+    color: LuxuryColors.luxeWhite,
   },
   welcomeContainer: {
     flex: 1,
@@ -248,20 +381,115 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: LuxuryColors.luxeWhite,
   },
-  headerRight: {
-    flexDirection: 'row',
-  },
-  iconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  profileButton: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     backgroundColor: LuxuryColors.charcoalGray,
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 8,
+    borderWidth: 2,
+    borderColor: LuxuryColors.imperialGold,
   },
-  iconText: {
-    fontSize: 18,
+  profileIcon: {
+    fontSize: 24,
+    color: LuxuryColors.luxeWhite,
+  },
+  // Sidebar Styles
+  sidebarOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    zIndex: 1000,
+  },
+  sidebar: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: width * 0.8,
+    height: '100%',
+    backgroundColor: LuxuryColors.charcoalGray,
+    zIndex: 1001,
+    paddingTop: 60,
+    paddingHorizontal: 20,
+  },
+  sidebarHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 40,
+    paddingBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: LuxuryColors.graphiteTint,
+  },
+  sidebarLogo: {
+    width: 30,
+    height: 30,
+    marginRight: 12,
+  },
+  sidebarTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: LuxuryColors.luxeWhite,
+  },
+  sidebarMenu: {
+    flex: 1,
+  },
+  sidebarMenuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: LuxuryColors.graphiteTint,
+  },
+  sidebarMenuIcon: {
+    fontSize: 20,
+    marginRight: 16,
+    width: 24,
+    textAlign: 'center',
+  },
+  sidebarMenuText: {
+    fontSize: 16,
+    color: LuxuryColors.luxeWhite,
+    fontWeight: '500',
+  },
+  sidebarLogout: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    marginTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: LuxuryColors.graphiteTint,
+  },
+  // Bottom Navbar Styles
+  bottomNavbar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: LuxuryColors.charcoalGray,
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    paddingBottom: 30,
+    borderTopWidth: 1,
+    borderTopColor: LuxuryColors.graphiteTint,
+  },
+  bottomNavItem: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  bottomNavIcon: {
+    fontSize: 20,
+    marginBottom: 4,
+  },
+  bottomNavText: {
+    fontSize: 12,
+    color: LuxuryColors.coolGray,
+    textAlign: 'center',
   },
   sectionTitle: {
     fontSize: 20,
@@ -389,21 +617,15 @@ const styles = StyleSheet.create({
     color: LuxuryColors.coolGray,
     textAlign: 'center',
   },
-  logoutButton: {
-    backgroundColor: LuxuryColors.royalRed,
-    borderRadius: 12,
-    paddingVertical: 16,
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    backgroundColor: LuxuryColors.jetBlack,
   },
-  logoutButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
+  loadingText: {
+    fontSize: 20,
     color: LuxuryColors.luxeWhite,
+    fontWeight: 'bold',
   },
 }); 

@@ -3,21 +3,22 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  ActivityIndicator,
-  Image,
-  Keyboard,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  View
+    ActivityIndicator,
+    Image,
+    Keyboard,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    TouchableWithoutFeedback,
+    View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import CustomAlert from '../components/CustomAlert';
+import { useUser } from '../context/UserContext';
 import { apiService } from '../services/api';
 
 // Luxury Color Theme
@@ -37,6 +38,7 @@ const LuxuryColors = {
 export default function SignupScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const { setUser } = useUser();
   
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -168,6 +170,12 @@ export default function SignupScreen() {
       });
 
       if (response.success) {
+        // Store real user data in context
+        setUser({
+          fullName: fullName,
+          email: email,
+        });
+
         showCustomAlert({
           title: 'Account Created',
           message: 'Your account has been created successfully! Please check your email for verification.',
@@ -210,15 +218,15 @@ export default function SignupScreen() {
         }
       }
 
-             showCustomAlert({
-         title: 'Signup Failed',
-         message: errorMessage,
-         type: 'error',
-         confirmText: 'OK',
-         showCancel: false,
-         onConfirm: () => hideCustomAlert(),
-         onCancel: () => hideCustomAlert(),
-       });
+      showCustomAlert({
+        title: 'Signup Failed',
+        message: errorMessage,
+        type: 'error',
+        confirmText: 'OK',
+        showCancel: false,
+        onConfirm: () => hideCustomAlert(),
+        onCancel: () => hideCustomAlert(),
+      });
     } finally {
       setIsLoading(false);
     }
