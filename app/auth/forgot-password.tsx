@@ -53,6 +53,8 @@ export default function ForgotPasswordScreen() {
     showCancel: false,
     onConfirm: () => {},
     onCancel: () => {},
+    autoDismiss: false,
+    dismissTime: 2000,
   });
 
   const showCustomAlert = (config: typeof alertConfig) => {
@@ -86,16 +88,19 @@ export default function ForgotPasswordScreen() {
     if (!validateForm()) return;
 
     setIsLoading(true);
+    console.log('🔄 Sending OTP request for email:', email.trim());
     
     try {
       const response = await apiService.forgotPassword(email.trim());
+      console.log('✅ OTP response:', response);
 
       if (response.success) {
+        console.log('🎯 OTP sent successfully, navigating to verify-otp');
         showCustomAlert({
-          title: 'Verification Code Sent', 
+          title: 'OTP Sent',
           message: 'A 6-digit verification code has been sent to your email address. Please check your inbox.',
           type: 'success',
-          confirmText: 'OK',
+          confirmText: 'Continue',
           showCancel: false,
           onConfirm: () => {
             hideCustomAlert();
@@ -105,11 +110,26 @@ export default function ForgotPasswordScreen() {
               params: { email: email.trim() }
             });
           },
-          onCancel: hideCustomAlert,
+          onCancel: () => hideCustomAlert(),
+          autoDismiss: false,
+          dismissTime: 2000,
+        });
+      } else {
+        console.log('❌ OTP request failed:', response.message);
+        showCustomAlert({
+          title: 'Error',
+          message: response.message || 'Failed to send verification code. Please try again.',
+          type: 'error',
+          confirmText: 'OK',
+          showCancel: false,
+          onConfirm: () => hideCustomAlert(),
+          onCancel: () => hideCustomAlert(),
+          autoDismiss: true,
+          dismissTime: 2000,
         });
       }
     } catch (error: any) {
-      console.error('Forgot password error:', error);
+      console.error('🚨 Forgot password error:', error);
       
       let errorMessage = 'Failed to send verification code. Please try again.';
       
@@ -131,6 +151,8 @@ export default function ForgotPasswordScreen() {
         showCancel: false,
         onConfirm: hideCustomAlert,
         onCancel: hideCustomAlert,
+        autoDismiss: true,
+        dismissTime: 2000,
       });
     } finally {
       setIsLoading(false);

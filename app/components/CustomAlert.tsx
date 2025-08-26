@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   Modal,
   View,
@@ -32,6 +32,8 @@ interface CustomAlertProps {
   showCancel?: boolean;
   onCancel?: () => void;
   cancelText?: string;
+  autoDismiss?: boolean;
+  dismissTime?: number;
 }
 
 const { width } = Dimensions.get('window');
@@ -46,7 +48,25 @@ export default function CustomAlert({
   showCancel = false,
   onCancel,
   cancelText = 'Cancel',
+  autoDismiss = false,
+  dismissTime = 2000,
 }: CustomAlertProps) {
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    if (visible && autoDismiss) {
+      timeoutRef.current = setTimeout(() => {
+        onConfirm();
+      }, dismissTime);
+    }
+
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [visible, autoDismiss, dismissTime, onConfirm]);
+
   const getTypeColors = () => {
     switch (type) {
       case 'success':

@@ -67,6 +67,8 @@ export default function SignupScreen() {
     showCancel: false,
     onConfirm: () => {},
     onCancel: () => {},
+    autoDismiss: false,
+    dismissTime: 2000,
   });
 
   const showCustomAlert = (config: typeof alertConfig) => {
@@ -187,6 +189,8 @@ export default function SignupScreen() {
             hideCustomAlert();
           },
           onCancel: () => hideCustomAlert(),
+          autoDismiss: true,
+          dismissTime: 2000,
         });
       } else {
         showCustomAlert({
@@ -197,6 +201,8 @@ export default function SignupScreen() {
           showCancel: false,
           onConfirm: () => hideCustomAlert(),
           onCancel: () => hideCustomAlert(),
+          autoDismiss: true,
+          dismissTime: 2000,
         });
       }
     } catch (error: any) {
@@ -226,6 +232,8 @@ export default function SignupScreen() {
         showCancel: false,
         onConfirm: () => hideCustomAlert(),
         onCancel: () => hideCustomAlert(),
+        autoDismiss: true,
+        dismissTime: 2000,
       });
     } finally {
       setIsLoading(false);

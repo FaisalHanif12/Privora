@@ -1,5 +1,4 @@
-import React, { createContext, ReactNode, useContext, useState, useEffect } from 'react';
-import { apiService } from '../services/api';
+import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 
 interface User {
   fullName: string;
@@ -36,14 +35,27 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        // For now, we'll use the known user data from the database
-        // In a real app, this would fetch from the backend based on stored token
+        // For development, we'll use the known user data from the database
+        // In production, this would fetch from the backend using stored token
         const mockUserData: User = {
           fullName: 'Faisal',
           email: 'mehrfaisall11@gmail.com',
         };
         
         setUser(mockUserData);
+        
+        // TODO: In production, uncomment this to fetch real user data
+        // const token = await getStoredToken(); // Get from secure storage
+        // if (token) {
+        //   const response = await apiService.getCurrentUser(token);
+        //   if (response.success && response.data) {
+        //     setUser({
+        //       fullName: response.data.fullName,
+        //       email: response.data.email,
+        //       profileImage: response.data.profileImage,
+        //     });
+        //   }
+        // }
       } catch (error) {
         console.error('Error fetching user data:', error);
       } finally {
@@ -56,7 +68,14 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 
   const updateUser = (updates: Partial<User>) => {
     if (user) {
-      setUser({ ...user, ...updates });
+      const updatedUser = { ...user, ...updates };
+      setUser(updatedUser);
+      
+      // TODO: In production, also update the backend
+      // if (updates.profileImage || updates.fullName || updates.email) {
+      //   // Update backend with new user data
+      //   updateUserInBackend(updatedUser);
+      // }
     }
   };
 

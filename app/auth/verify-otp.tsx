@@ -3,18 +3,18 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  Image,
-  Keyboard,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  View
+    ActivityIndicator,
+    Image,
+    Keyboard,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    TouchableWithoutFeedback,
+    View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import CustomAlert from '../components/CustomAlert';
@@ -55,6 +55,8 @@ export default function VerifyOTPScreen() {
     showCancel: false,
     onConfirm: () => {},
     onCancel: () => {},
+    autoDismiss: false,
+    dismissTime: 2000,
   });
 
   const showCustomAlert = (config: typeof alertConfig) => {
@@ -101,15 +103,18 @@ export default function VerifyOTPScreen() {
     if (!validateOTP()) return;
 
     setIsLoading(true);
+    const otpString = otp.join('');
+    console.log('🔄 Verifying OTP:', otpString, 'for email:', email);
     
     try {
-      const otpString = otp.join('');
       const response = await apiService.verifyOTP(email, otpString);
+      console.log('✅ OTP verification response:', response);
 
       if (response.success) {
+        console.log('🎯 OTP verified successfully, navigating to reset-password');
         showCustomAlert({
-          title: 'OTP Verified', 
-          message: 'Your verification code has been verified successfully.',
+          title: 'OTP Verified',
+          message: 'Your verification code has been verified successfully!',
           type: 'success',
           confirmText: 'Continue',
           showCancel: false,
@@ -124,30 +129,49 @@ export default function VerifyOTPScreen() {
               }
             });
           },
-          onCancel: hideCustomAlert,
+          onCancel: () => hideCustomAlert(),
+          autoDismiss: false,
+          dismissTime: 2000,
+        });
+      } else {
+        console.log('❌ OTP verification failed:', response.message);
+        showCustomAlert({
+          title: 'Verification Failed',
+          message: response.message || 'Invalid OTP. Please try again.',
+          type: 'error',
+          confirmText: 'OK',
+          showCancel: false,
+          onConfirm: () => hideCustomAlert(),
+          onCancel: () => hideCustomAlert(),
+          autoDismiss: true,
+          dismissTime: 2000,
         });
       }
     } catch (error: any) {
-      console.error('Verify OTP error:', error);
+      console.error('🚨 OTP verification error:', error);
       
       let errorMessage = 'Failed to verify OTP. Please try again.';
       
       if (error.message) {
-        if (error.message.includes('Invalid or expired OTP')) {
-          errorMessage = 'Invalid or expired verification code. Please check your code or request a new one.';
+        if (error.message.includes('Invalid OTP')) {
+          errorMessage = 'Invalid OTP code. Please check and try again.';
+        } else if (error.message.includes('OTP expired')) {
+          errorMessage = 'OTP has expired. Please request a new one.';
         } else {
           errorMessage = error.message;
         }
       }
 
       showCustomAlert({
-        title: 'Error',
+        title: 'Verification Failed',
         message: errorMessage,
         type: 'error',
         confirmText: 'OK',
         showCancel: false,
-        onConfirm: hideCustomAlert,
-        onCancel: hideCustomAlert,
+        onConfirm: () => hideCustomAlert(),
+        onCancel: () => hideCustomAlert(),
+        autoDismiss: true,
+        dismissTime: 2000,
       });
     } finally {
       setIsLoading(false);
@@ -155,6 +179,8 @@ export default function VerifyOTPScreen() {
   };
 
   const handleResendOTP = async () => {
+    setIsLoading(true); // Changed from setIsResending to setIsLoading
+    
     try {
       const response = await apiService.resendOTP(email);
 
@@ -170,8 +196,12 @@ export default function VerifyOTPScreen() {
           type: 'success',
           confirmText: 'OK',
           showCancel: false,
-          onConfirm: hideCustomAlert,
+          onConfirm: () => {
+            hideCustomAlert();
+          },
           onCancel: hideCustomAlert,
+          autoDismiss: true,
+          dismissTime: 2000,
         });
       }
     } catch (error: any) {
@@ -191,7 +221,11 @@ export default function VerifyOTPScreen() {
         showCancel: false,
         onConfirm: hideCustomAlert,
         onCancel: hideCustomAlert,
+        autoDismiss: true,
+        dismissTime: 2000,
       });
+    } finally {
+      setIsLoading(false); // Changed from setIsResending to setIsLoading
     }
   };
 

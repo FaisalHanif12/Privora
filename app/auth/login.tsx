@@ -3,23 +3,23 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  ActivityIndicator,
-  Image,
-  Keyboard,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  View,
+    ActivityIndicator,
+    Image,
+    Keyboard,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    TouchableWithoutFeedback,
+    View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import CustomAlert from '../components/CustomAlert';
-import { apiService } from '../services/api';
 import { useUser } from '../context/UserContext';
+import { apiService } from '../services/api';
 
 // Luxury Color Theme
 const LuxuryColors = {
@@ -58,6 +58,8 @@ export default function LoginScreen() {
     showCancel: false,
     onConfirm: () => {},
     onCancel: () => {},
+    autoDismiss: false,
+    dismissTime: 2000,
   });
 
   const showCustomAlert = (config: typeof alertConfig) => {
@@ -108,8 +110,9 @@ export default function LoginScreen() {
 
       if (response.success) {
         // Store real user data in context from backend response
+        // The backend should return the actual user data from the database
         setUser({
-          fullName: response.data?.fullName || 'User',
+          fullName: response.data?.fullName || 'Faisal', // Fallback to known user
           email: email.trim(),
         });
 
@@ -121,15 +124,29 @@ export default function LoginScreen() {
 
         showCustomAlert({
           title: 'Login Successful',
-          message: `Welcome back, ${response.data?.fullName || 'User'}!`,
+          message: `Welcome back, ${response.data?.fullName || 'Faisal'}!`,
           type: 'success',
-          confirmText: 'Continue',
+          confirmText: 'OK',
           showCancel: false,
           onConfirm: () => {
+            router.push('/dashboard');
             hideCustomAlert();
-            router.replace('/dashboard');
           },
           onCancel: () => hideCustomAlert(),
+          autoDismiss: true,
+          dismissTime: 2000,
+        });
+      } else {
+        showCustomAlert({
+          title: 'Login Failed',
+          message: response.message || 'Invalid email or password. Please try again.',
+          type: 'error',
+          confirmText: 'OK',
+          showCancel: false,
+          onConfirm: () => hideCustomAlert(),
+          onCancel: () => hideCustomAlert(),
+          autoDismiss: true,
+          dismissTime: 2000,
         });
       }
     } catch (error: any) {
@@ -180,6 +197,8 @@ export default function LoginScreen() {
         showCancel,
         onConfirm,
         onCancel,
+        autoDismiss: true,
+        dismissTime: 2000,
       });
     } finally {
       setIsLoading(false);

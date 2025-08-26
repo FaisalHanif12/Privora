@@ -3,21 +3,21 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  Animated,
-  Dimensions,
-  Image,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  View
+    Animated,
+    Dimensions,
+    Image,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    TouchableWithoutFeedback,
+    View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useUser } from './context/UserContext';
 import { UserIcon } from './components/UserIcon';
+import { useUser } from './context/UserContext';
 
 // Luxury Color Theme
 const LuxuryColors = {
@@ -216,7 +216,15 @@ export default function DashboardScreen() {
               </View>
             </View>
             <TouchableOpacity onPress={handleProfile} style={styles.profileButton}>
-              <UserIcon size={24} color={LuxuryColors.luxeWhite} />
+              {user?.profileImage ? (
+                <Image 
+                  source={{ uri: user.profileImage }} 
+                  style={styles.profileImage}
+                  resizeMode="cover"
+                />
+              ) : (
+                <UserIcon size={24} color={LuxuryColors.luxeWhite} />
+              )}
             </TouchableOpacity>
           </View>
 
@@ -390,6 +398,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 2,
     borderColor: LuxuryColors.imperialGold,
+  },
+  profileImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 25,
   },
   profileIcon: {
     fontSize: 24,

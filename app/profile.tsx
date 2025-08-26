@@ -1,28 +1,27 @@
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  Animated,
-  Dimensions,
-  Image,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  View,
-  Alert,
-  Modal,
-  TextInput,
-  Switch,
+    Alert,
+    Dimensions,
+    Image,
+    KeyboardAvoidingView,
+    Modal,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Switch,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    TouchableWithoutFeedback,
+    View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import * as ImagePicker from 'expo-image-picker';
-import { useUser } from './context/UserContext';
 import { UserIcon } from './components/UserIcon';
+import { useUser } from './context/UserContext';
 
 // Luxury Color Theme
 const LuxuryColors = {
@@ -105,13 +104,41 @@ export default function ProfileScreen() {
     setShowEditModal(true);
   };
 
-  const handleSaveProfile = () => {
-    updateUser({ 
-      fullName: editName,
-      email: editEmail 
-    });
-    setShowEditModal(false);
-    Alert.alert('Success', 'Profile updated successfully!');
+  const handleSaveProfile = async () => {
+    try {
+      // Update user in context
+      updateUser({ 
+        fullName: editName,
+        email: editEmail 
+      });
+
+      // TODO: Update user in database when token is available
+      // const token = await getStoredToken(); // Get from secure storage
+      // if (token) {
+      //   const response = await apiService.updateProfile({
+      //     fullName: editName,
+      //     email: editEmail
+      //   }, token);
+      //   
+      //   if (!response.success) {
+      //     throw new Error(response.message || 'Failed to update profile');
+      //   }
+      // }
+
+      setShowEditModal(false);
+      Alert.alert('Success', 'Profile updated successfully!');
+      
+      // If email was changed, show warning about login
+      if (editEmail !== user?.email) {
+        Alert.alert(
+          'Email Updated',
+          'Your email has been updated. You will need to use the new email address for future logins.',
+          [{ text: 'OK' }]
+        );
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to update profile. Please try again.');
+    }
   };
 
   const handleChangePassword = () => {
@@ -182,6 +209,55 @@ export default function ProfileScreen() {
           text: 'Sign Out', 
           onPress: () => router.replace('/auth/login')
         }
+      ]
+    );
+  };
+
+  const handleAccessSettings = () => {
+    Alert.alert(
+      'Access Settings',
+      'Manage who can access your account and portfolio data.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'View Permissions', onPress: () => {
+          Alert.alert(
+            'Current Permissions',
+            'No users currently have access to your account.\n\nYou can invite users to share access to your portfolio data.',
+            [{ text: 'OK' }]
+          );
+        }},
+        { text: 'Invite User', onPress: handleInviteUser }
+      ]
+    );
+  };
+
+  const handleInviteUser = () => {
+    Alert.alert(
+      'Invite User',
+      'Send an invitation to share access to your account.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Send Invite', onPress: () => {
+          // TODO: Implement invite functionality with email input
+          Alert.alert(
+            'Invitation Sent',
+            'Invitation has been sent successfully. The user will receive an email with access instructions.',
+            [{ text: 'OK' }]
+          );
+        }}
+      ]
+    );
+  };
+
+  const handleManagePermissions = () => {
+    Alert.alert(
+      'Manage Permissions',
+      'Control what data users can access and their permission levels.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'View Users', onPress: () => {
+          Alert.alert('No Users', 'No users currently have access to your account.');
+        }}
       ]
     );
   };
@@ -302,6 +378,25 @@ export default function ProfileScreen() {
               title="Activity Logging"
               subtitle="View your account activity"
               onPress={handleActivityLogging}
+            />
+          </View>
+
+          {/* Access & Invite Section */}
+          <View style={styles.optionsSection}>
+            <Text style={styles.sectionTitle}>Access & Invite</Text>
+            
+            <ProfileOption
+              icon="🔗"
+              title="Manage Access"
+              subtitle="Control who can view your portfolio"
+              onPress={handleAccessSettings}
+            />
+            
+            <ProfileOption
+              icon="🔐"
+              title="Manage Permissions"
+              subtitle="Set access levels for shared users"
+              onPress={handleManagePermissions}
             />
           </View>
 

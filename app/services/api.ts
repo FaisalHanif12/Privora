@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://192.168.0.111:5000/api';
+const API_BASE_URL = 'http://192.168.0.117:5000/api';
 
 interface ApiResponse<T = any> {
   success: boolean;
@@ -36,6 +36,12 @@ interface ResetPasswordRequest {
 
 interface ResendOTPRequest {
   email: string;
+}
+
+interface UpdateProfileRequest {
+  fullName?: string;
+  email?: string;
+  profileImage?: string;
 }
 
 class ApiService {
@@ -122,6 +128,17 @@ class ApiService {
     });
   }
 
+  // Update user profile
+  async updateProfile(profileData: UpdateProfileRequest, token: string): Promise<ApiResponse> {
+    return this.makeRequest('/auth/update-profile', {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(profileData),
+    });
+  }
+
   // Get current user (protected route)
   async getCurrentUser(token: string): Promise<ApiResponse> {
     return this.makeRequest('/auth/me', {
@@ -138,7 +155,6 @@ export type {
     ApiResponse,
     ForgotPasswordRequest,
     LoginRequest,
-    RegisterRequest, ResendOTPRequest, ResetPasswordRequest,
-    VerifyOTPRequest
+    RegisterRequest, ResendOTPRequest, ResetPasswordRequest, UpdateProfileRequest, VerifyOTPRequest
 };
 

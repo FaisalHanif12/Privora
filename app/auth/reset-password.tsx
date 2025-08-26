@@ -39,6 +39,9 @@ export default function ResetPasswordScreen() {
   const colors = Colors[colorScheme ?? 'light'];
   const { email, otp } = useLocalSearchParams<{ email: string; otp: string }>();
   
+  // Debug logging
+  console.log('🔍 ResetPasswordScreen - Received params:', { email, otp });
+  
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -60,6 +63,8 @@ export default function ResetPasswordScreen() {
     showCancel: false,
     onConfirm: () => {},
     onCancel: () => {},
+    autoDismiss: false,
+    dismissTime: 2000,
   });
 
   const showCustomAlert = (config: typeof alertConfig) => {
@@ -129,16 +134,186 @@ export default function ResetPasswordScreen() {
 
       if (response.success) {
         showCustomAlert({
-          title: 'Password Reset Successfully', 
+          title: 'Password Reset Successfully',
           message: 'Your password has been reset successfully. You can now login with your new password.',
           type: 'success',
           confirmText: 'OK',
           showCancel: false,
           onConfirm: () => {
-            hideCustomAlert();
             router.push('/auth/login');
+            hideCustomAlert();
           },
-          onCancel: hideCustomAlert,
+          onCancel: () => hideCustomAlert(),
+          autoDismiss: true,
+          dismissTime: 2000,
+        });
+      } else {
+        showCustomAlert({
+          title: 'Reset Failed',
+          message: response.message || 'Failed to reset password. Please try again.',
+          type: 'error',
+          confirmText: 'OK',
+          showCancel: false,
+          onConfirm: () => hideCustomAlert(),
+          onCancel: () => hideCustomAlert(),
+          autoDismiss: true,
+import { Colors } from '@/constants/Colors';
+import { useColorScheme } from '@/hooks/useColorScheme';
+import { router, useLocalSearchParams } from 'expo-router';
+import React, { useState } from 'react';
+import {
+  ActivityIndicator,
+  Image,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import CustomAlert from '../components/CustomAlert';
+import { apiService } from '../services/api';
+
+// Luxury Color Theme
+const LuxuryColors = {
+  jetBlack: '#0B0C10',
+  imperialGold: '#D4AF37',
+  platinumSilver: '#C0C0C0',
+  emeraldGreen: '#2ECC71',
+  royalRed: '#E74C3C',
+  luxeWhite: '#FFFFFF',
+  coolGray: '#A5A5A5',
+  charcoalGray: '#1C1F26',
+  graphiteTint: '#121417',
+  goldenBrown: '#A67C00',
+};
+
+export default function ResetPasswordScreen() {
+  const colorScheme = useColorScheme();
+  const colors = Colors[colorScheme ?? 'light'];
+  const { email, otp } = useLocalSearchParams<{ email: string; otp: string }>();
+  
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isButtonPressed, setIsButtonPressed] = useState(false);
+  const [errors, setErrors] = useState<{ 
+    newPassword?: string; 
+    confirmPassword?: string;
+  }>({});
+
+  // Custom Alert State
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [alertConfig, setAlertConfig] = useState({
+    title: '',
+    message: '',
+    type: 'info' as 'success' | 'error' | 'warning' | 'info',
+    confirmText: 'OK',
+    showCancel: false,
+    onConfirm: () => {},
+    onCancel: () => {},
+    autoDismiss: false,
+    dismissTime: 2000,
+  });
+
+  const showCustomAlert = (config: typeof alertConfig) => {
+    setAlertConfig(config);
+    setAlertVisible(true);
+  };
+
+  const hideCustomAlert = () => {
+    setAlertVisible(false);
+  };
+
+  const validatePassword = (password: string) => {
+    const minLength = password.length >= 6;
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumbers = /\d/.test(password);
+    
+    return {
+      isValid: minLength && hasUpperCase && hasLowerCase && hasNumbers,
+      minLength,
+      hasUpperCase,
+      hasLowerCase,
+      hasNumbers
+    };
+  };
+
+  const validateForm = () => {
+    const newErrors: { 
+      newPassword?: string; 
+      confirmPassword?: string;
+    } = {};
+
+    // New Password Validation
+    if (!newPassword.trim()) {
+      newErrors.newPassword = 'New password is required';
+    } else {
+      const passwordValidation = validatePassword(newPassword);
+      if (!passwordValidation.isValid) {
+        let requirements = [];
+        if (!passwordValidation.minLength) requirements.push('at least 6 characters');
+        if (!passwordValidation.hasUpperCase) requirements.push('one uppercase letter');
+        if (!passwordValidation.hasLowerCase) requirements.push('one lowercase letter');
+        if (!passwordValidation.hasNumbers) requirements.push('one number');
+        
+        newErrors.newPassword = `Password must contain: ${requirements.join(', ')}`;
+      }
+    }
+
+    // Confirm Password Validation
+    if (!confirmPassword.trim()) {
+      newErrors.confirmPassword = 'Please confirm your new password';
+    } else if (newPassword !== confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleResetPassword = async () => {
+    if (!validateForm()) return;
+
+    setIsLoading(true);
+    
+    try {
+      const response = await apiService.resetPassword(email, otp, newPassword);
+
+      if (response.success) {
+        showCustomAlert({
+          title: 'Password Reset Successfully',
+          message: 'Your password has been reset successfully. You can now login with your new password.',
+          type: 'success',
+          confirmText: 'OK',
+          showCancel: false,
+          onConfirm: () => {
+            router.push('/auth/login');
+            hideCustomAlert();
+          },
+          onCancel: () => hideCustomAlert(),
+          autoDismiss: true,
+          dismissTime: 2000,
+        });
+      } else {
+        showCustomAlert({
+          title: 'Reset Failed',
+          message: response.message || 'Failed to reset password. Please try again.',
+          type: 'error',
+          confirmText: 'OK',
+          showCancel: false,
+          onConfirm: () => hideCustomAlert(),
+          onCancel: () => hideCustomAlert(),
+          autoDismiss: true,
+          dismissTime: 2000,
         });
       }
     } catch (error: any) {
@@ -162,6 +337,8 @@ export default function ResetPasswordScreen() {
         showCancel: false,
         onConfirm: hideCustomAlert,
         onCancel: hideCustomAlert,
+        autoDismiss: true,
+        dismissTime: 2000,
       });
     } finally {
       setIsLoading(false);
